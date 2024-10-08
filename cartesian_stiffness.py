@@ -1,15 +1,15 @@
 import numpy as np
 from pydrake.all import (
     BasicVector,
-    LeafSystem,
     JacobianWrtVariable,
+    LeafSystem,
     MultibodyForces,
     Value,
     ValueProducer,
 )
 
 
-class JointStiffnessController(LeafSystem):
+class CartesianStiffnessController(LeafSystem):
     def __init__(self, plant):
         LeafSystem.__init__(self)
         self.plant = plant
@@ -19,9 +19,7 @@ class JointStiffnessController(LeafSystem):
         self.num_q = self.plant.num_positions(self.panda)
         self.num_q_all = self.plant.num_positions()
 
-        self.panda_body_frame = self.plant.GetBodyByName(
-            "panda_hand", self.panda
-        ).body_frame()
+        self.panda_body_frame = self.plant.GetBodyByName("panda_hand").body_frame()
         self.W = self.plant.world_frame()
         self.panda_start_pos = plant.GetJointByName(
             "panda_joint1", self.panda
@@ -34,10 +32,7 @@ class JointStiffnessController(LeafSystem):
             "estimated_state", num_states
         ).get_index()
         self.input_port_index_desired_state_ = self.DeclareVectorInputPort(
-            "desired_state", BasicVector(num_states)
-        ).get_index()
-        self.input_port_stiffness = self.DeclareVectorInputPort(
-            "stiffness", 6
+            "desired_state", BasicVector(6 + num_states)
         ).get_index()
         self.output_port_index_force_ = self.DeclareVectorOutputPort(
             "generalized_force",
@@ -122,4 +117,43 @@ class JointStiffnessController(LeafSystem):
             plant_context, cache_val.get_mutable_value()
         )
 
+    def CalcOutputForce(self, context, output):
+        plant_context = self.get_cache_entry(self.plant_context_cache_index_).Eval(
+            context
+        )
+        applied_forces = self.get_cache_entry(self.applied_forces_cache_index_).Eval(
+            context
+        )
+        J_g = self.get_cache_entry(self.jacobian_cache_idx_).Eval(context)
+        tau = self.plant.CalcInverseDynamics(
+            plant_context, np.zeros((self.num_q_all,)), applied_forces
+        )
+        Cv = self.plant.CalcBiasTerm(plant_context)
+        tau -= Cv
+        tau = self.plant.GetVelocitiesFromArray(self.panda, tau)
 
+        x = self.get_input_port_estimated_state().Eval(context)
+        x_d_K = self.get_input_port_desired_state().Eval(context)
+
+        x_d = x_d_K[6:]
+        Kp = np.diag(x_d_K[:6])
+
+        kp_q = J_g.T @ Kp @ J_g
+        finger_gains = np.array(
+            [[0, 0, 0, 0, 0, 0, 0, 100, 0], [0, 0, 0, 0, 0, 0, 0, 0, 100]]
+        )
+        kp_q = np.vstack((kp_q, finger_gains))
+        kd = np.eye(9)
+        for i in range(9):
+            kd[i, i] = 2 * np.sqrt(kp_q[i, i])
+
+        q_err = x_d[: self.num_q] - x[: self.num_q]
+        qd_err = x_d[-self.num_q :] - x[-self.num_q :]
+        spring_damper_F = kp_q @ q_err + kd @ qd_err
+        spring_damper_F_mag = np.linalg.norm(spring_damper_F)
+        if spring_damper_F_mag > 20:
+            spring_damper_F = (spring_damper_F / spring_damper_F_mag) * 20
+        tau += spring_damper_F
+        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 10, 10])
+        tau = np.clip(tau, -lims, lims)
+        output.SetFromVector(tau)

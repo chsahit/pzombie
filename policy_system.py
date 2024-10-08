@@ -36,9 +36,8 @@ class PolicySystem(LeafSystem):
             abstract_value.get_mutable_value(), self.panda, state
         )
 
-
     def CalcOuput(self, context, output):
-        raise NotImplementedError("only using panda state")
+        # raise NotImplementedError("only using panda state")
         assert self.policy is not None
         x = self.get_input_port_estimated_state().Eval(context)
         a = self.policy(x)

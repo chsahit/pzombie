@@ -125,11 +125,14 @@ class CartesianStiffnessController(LeafSystem):
             context
         )
         J_g = self.get_cache_entry(self.jacobian_cache_idx_).Eval(context)
+        """
         tau = self.plant.CalcInverseDynamics(
             plant_context, np.zeros((self.num_q_all,)), applied_forces
         )
+        """
+        tau = np.zeros((15,))
         Cv = self.plant.CalcBiasTerm(plant_context)
-        tau -= Cv
+        # tau -= Cv
         tau = self.plant.GetVelocitiesFromArray(self.panda, tau)
 
         x = self.get_input_port_estimated_state().Eval(context)
@@ -142,11 +145,13 @@ class CartesianStiffnessController(LeafSystem):
         finger_gains = np.array(
             [[0, 0, 0, 0, 0, 0, 0, 100, 0], [0, 0, 0, 0, 0, 0, 0, 0, 100]]
         )
+        kp_q = np.hstack((kp_q, np.zeros((7, 2))))
         kp_q = np.vstack((kp_q, finger_gains))
-        kd = np.eye(9)
-        for i in range(9):
+        kp_q = kp_q[:7, :7]
+        kd_dim = 7
+        kd = np.eye(kd_dim)
+        for i in range(kd_dim):
             kd[i, i] = 2 * np.sqrt(kp_q[i, i])
-
         q_err = x_d[: self.num_q] - x[: self.num_q]
         qd_err = x_d[-self.num_q :] - x[-self.num_q :]
         spring_damper_F = kp_q @ q_err + kd @ qd_err
@@ -155,5 +160,6 @@ class CartesianStiffnessController(LeafSystem):
             spring_damper_F = (spring_damper_F / spring_damper_F_mag) * 20
         tau += spring_damper_F
         lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 10, 10])
+        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12])
         tau = np.clip(tau, -lims, lims)
         output.SetFromVector(tau)

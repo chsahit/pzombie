@@ -1,0 +1,3 @@
+policy only takes in panda state
+can't calc inv dynamics with multiple free bodies
+gripper control

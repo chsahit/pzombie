@@ -1,3 +1,6 @@
-policy only takes in panda state
+gravity comp
+non-cartesian stiffness
 can't calc inv dynamics with multiple free bodies
-gripper control
+policy only takes in panda state
+get rid of hardcoding port sizes
+maybe have an option for not having to command 0_7 for velocity?

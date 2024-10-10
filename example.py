@@ -5,7 +5,7 @@ import pzombie
 
 def test_simulation():
     def policy(state):
-        return np.zeros((20,))
+        return np.zeros((24,))
 
     env = pzombie.make_env()
     pzombie.simulate_policy(policy, env)

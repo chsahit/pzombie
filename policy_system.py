@@ -7,7 +7,7 @@ class PolicySystem(LeafSystem):
     def __init__(self, plant, num_states: int):
         LeafSystem.__init__(self)
         self.output_port_xd = self.DeclareVectorOutputPort(
-            "out", BasicVector(20), self.CalcOuput
+            "out", BasicVector(24), self.CalcOuput
         )
         self.policy = None
         self.input_port_index_estimated_state_ = self.DeclareVectorInputPort(

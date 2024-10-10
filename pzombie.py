@@ -1,11 +1,19 @@
 import numpy as np
-from pydrake.all import AddMultibodyPlantSceneGraph, DiagramBuilder, Parser, Simulator
+from pydrake.all import (
+    AddDefaultVisualization,
+    AddMultibodyPlantSceneGraph,
+    DiagramBuilder,
+    Parser,
+    Simulator,
+    StartMeshcat,
+)
 
 from cartesian_stiffness import CartesianStiffnessController
 from policy_system import PolicySystem
 
 
-def make_env(eraser_pose: np.ndarray = np.array([0.1, 0.0, 0.6])):
+def make_env(eraser_pose: np.ndarray = np.array([0.1, 0.0, 1.6])):
+    meshcat = StartMeshcat()
     builder = DiagramBuilder()
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=1e-4)
     parser = Parser(plant, scene_graph)
@@ -24,7 +32,7 @@ def make_env(eraser_pose: np.ndarray = np.array([0.1, 0.0, 0.6])):
     )
     num_objects = 1
     num_states = 6 * num_objects + 14
-    policy = builder.AddNamedSystem("policy", PolicySystem(plant, 14))
+    policy = builder.AddNamedSystem("policy", PolicySystem(plant, 18))
     builder.Connect(
         plant.get_state_output_port(panda), policy.get_input_port_estimated_state()
     )
@@ -33,6 +41,7 @@ def make_env(eraser_pose: np.ndarray = np.array([0.1, 0.0, 0.6])):
         plant.get_state_output_port(panda), controller.get_input_port_estimated_state()
     )
     builder.Connect(controller.get_output_port(), plant.get_actuation_input_port(panda))
+    AddDefaultVisualization(builder, meshcat)
     diagram = builder.Build()
     return diagram
 

@@ -32,7 +32,7 @@ class CartesianStiffnessController(LeafSystem):
             "estimated_state", num_states
         ).get_index()
         self.input_port_index_desired_state_ = self.DeclareVectorInputPort(
-            "desired_state", BasicVector(6 + num_states)
+            "desired_state", BasicVector(6 + 9 * 2)  # stiffness R6 + hand_q + hand_qdot
         ).get_index()
         self.output_port_index_force_ = self.DeclareVectorOutputPort(
             "generalized_force",
@@ -147,8 +147,7 @@ class CartesianStiffnessController(LeafSystem):
         )
         kp_q = np.hstack((kp_q, np.zeros((7, 2))))
         kp_q = np.vstack((kp_q, finger_gains))
-        kp_q = kp_q[:7, :7]
-        kd_dim = 7
+        kd_dim = 9
         kd = np.eye(kd_dim)
         for i in range(kd_dim):
             kd[i, i] = 2 * np.sqrt(kp_q[i, i])
@@ -160,6 +159,5 @@ class CartesianStiffnessController(LeafSystem):
             spring_damper_F = (spring_damper_F / spring_damper_F_mag) * 20
         tau += spring_damper_F
         lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 10, 10])
-        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12])
         tau = np.clip(tau, -lims, lims)
         output.SetFromVector(tau)

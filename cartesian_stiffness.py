@@ -32,7 +32,8 @@ class CartesianStiffnessController(LeafSystem):
             "estimated_state", num_states
         ).get_index()
         self.input_port_index_desired_state_ = self.DeclareVectorInputPort(
-            "desired_state", BasicVector(6 + 9 * 2)  # stiffness R6 + hand_q + hand_qdot
+            "desired_state",
+            BasicVector(36 + 9 + 9),  # stiffness R^{6x6} + hand_q + hand_qdot
         ).get_index()
         self.output_port_index_force_ = self.DeclareVectorOutputPort(
             "generalized_force",
@@ -136,8 +137,8 @@ class CartesianStiffnessController(LeafSystem):
         x = self.get_input_port_estimated_state().Eval(context)
         x_d_K = self.get_input_port_desired_state().Eval(context)
 
-        x_d = x_d_K[6:]
-        Kp = np.diag(x_d_K[:6])
+        Kp = np.reshape(x_d_K[:36], (6, 6))
+        x_d = x_d_K[36:]
 
         kp_q = J_g.T @ Kp @ J_g
         finger_gains = np.array(

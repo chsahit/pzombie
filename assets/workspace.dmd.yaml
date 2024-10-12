@@ -5,6 +5,9 @@ directives:
 - add_weld:
     parent: world
     child: table::box
+    X_PC:
+      translation: [0.0, 0.0, 0.35]
+      rotation: !Rpy { deg: [0, 0, 0] }
 - add_model:
     name: panda
     file: package://drake_models/franka_description/urdf/panda_arm_hand.urdf
@@ -12,7 +15,7 @@ directives:
     parent: table::box
     child: panda::panda_link0
     X_PC:
-        translation: [-0.25, 0.0, 0.5]
+        translation: [-0.25, 0.0, 0.35]
         rotation: !Rpy { deg: [0, 0, 0] }
 - add_model:
     name: eraser

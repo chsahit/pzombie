@@ -1,4 +1,7 @@
-non-cartesian stiffness
+ik
 policy only takes in panda state
+multiple objects
+spec colors
+erasing demo
+fix RTR
 get rid of hardcoding port sizes
-maybe have an option for not having to command 0_7 for velocity?

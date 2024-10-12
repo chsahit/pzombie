@@ -7,7 +7,7 @@ class PolicySystem(LeafSystem):
     def __init__(self, plant, num_states: int):
         LeafSystem.__init__(self)
         self.output_port_xd = self.DeclareVectorOutputPort(
-            "out", BasicVector(24), self.CalcOuput
+            "out", BasicVector(36 + 9 + 9), self.CalcOuput
         )
         self.policy = None
         self.input_port_index_estimated_state_ = self.DeclareVectorInputPort(
@@ -40,5 +40,5 @@ class PolicySystem(LeafSystem):
         # raise NotImplementedError("only using panda state")
         assert self.policy is not None
         x = self.get_input_port_estimated_state().Eval(context)
-        a = self.policy(x)
+        a = self.policy(x).serialize()
         output.SetFromVector(a)

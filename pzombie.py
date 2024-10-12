@@ -11,22 +11,39 @@ from pydrake.all import (
 from cartesian_stiffness import CartesianStiffnessController
 from policy_system import PolicySystem
 
+DEFAULT_PANDA_ANGLES = np.array(
+    [
+        0.0796904,
+        0.18628879,
+        -0.07548908,
+        -2.42085905,
+        0.06961755,
+        2.52396334,
+        0.6796144,
+        0.03,
+        0.03,
+    ]
+)
 
-def make_env(eraser_pose: np.ndarray = np.array([0.1, 0.0, 1.6])):
+
+class Env:
+    def __init__(self, eraser_pose, panda_pose: np.ndarray = DEFAULT_PANDA_ANGLES):
+        self.panda_pose = panda_pose
+        self.eraser_pose = eraser_pose
+
+
+def make_env(env: Env):
     meshcat = StartMeshcat()
     builder = DiagramBuilder()
-    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=1e-4)
+    plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=1e-3)
     parser = Parser(plant, scene_graph)
     parser.package_map().Add("assets", "assets/")
     parser.AddModels("assets/workspace.dmd.yaml")
     panda = plant.GetModelInstanceByName("panda")
-    # eraser = plant.GetModelInstanceByName("eraser")
     plant.Finalize()
     eraser_idx = plant.GetModelInstanceByName("eraser")
-    plant.SetDefaultPositions(
-        eraser_idx,
-        np.array([eraser_pose[0], eraser_pose[1], eraser_pose[2], 1, 0, 0, 0]),
-    )
+    plant.SetDefaultPositions(panda, env.panda_pose)
+    plant.SetDefaultPositions(eraser_idx, env.eraser_pose)
     controller = builder.AddNamedSystem(
         "controller", CartesianStiffnessController(plant)
     )
@@ -51,4 +68,5 @@ def simulate_policy(pi, env, timeout: float = 10.0):
     policy_sys.policy = pi
     simulator = Simulator(env)
     simulator.Initialize()
+    breakpoint()
     simulator.AdvanceTo(timeout)

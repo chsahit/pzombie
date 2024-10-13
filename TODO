@@ -1,7 +1,4 @@
-ik
-policy only takes in panda state
-multiple objects
-spec colors
 erasing demo
 fix RTR
 get rid of hardcoding port sizes
+policies should get velocity as well

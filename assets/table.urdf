@@ -11,6 +11,10 @@
       <geometry>
         <box size="1.53 1.22 0.7"/>
       </geometry>
+      <material name="grey">
+        <color rgba="0.7 0.7 0.7 0.9"/>
+      </material>
+
     </visual>
     <collision name="box">
       <geometry>

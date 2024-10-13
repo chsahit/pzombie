@@ -1,3 +1,5 @@
+from typing import List
+
 import numpy as np
 from pydrake.all import (
     AddDefaultVisualization,
@@ -26,10 +28,19 @@ DEFAULT_PANDA_ANGLES = np.array(
 )
 
 
+class Asset:
+    def __init__(self, name, path, pose):
+        self.name = name
+        self.path = path
+        self.pose = pose
+
+
 class Env:
-    def __init__(self, eraser_pose, panda_pose: np.ndarray = DEFAULT_PANDA_ANGLES):
+    def __init__(
+        self, assets: List[Asset], panda_pose: np.ndarray = DEFAULT_PANDA_ANGLES
+    ):
         self.panda_pose = panda_pose
-        self.eraser_pose = eraser_pose
+        self.assets = assets
 
 
 class CartesianStiffnessAction:
@@ -67,18 +78,25 @@ def make_env(env: Env):
     parser.package_map().Add("assets", "assets/")
     parser.AddModels("assets/workspace.dmd.yaml")
     panda = plant.GetModelInstanceByName("panda")
+    asset_indices = dict()
+    for asset in env.assets:
+        asset_idx = parser.AddModels(asset.path)
+        assert len(asset_idx) == 1
+        asset_indices[asset.name] = asset_idx[0]
     plant.Finalize()
-    eraser_idx = plant.GetModelInstanceByName("eraser")
     plant.SetDefaultPositions(panda, env.panda_pose)
-    plant.SetDefaultPositions(eraser_idx, env.eraser_pose)
+    for asset in env.assets:
+        plant.SetDefaultPositions(asset_indices[asset.name], asset.pose)
     controller = builder.AddNamedSystem(
         "controller", CartesianStiffnessController(plant)
     )
-    num_objects = 1
-    num_states = 6 * num_objects + 14
-    policy = builder.AddNamedSystem("policy", PolicySystem(plant, 18))
+    num_objects = len(env.assets)
+    num_states = 13 * num_objects + 18
+    policy = builder.AddNamedSystem(
+        "policy", PolicySystem(plant, num_states, asset_indices)
+    )
     builder.Connect(
-        plant.get_state_output_port(panda), policy.get_input_port_estimated_state()
+        plant.get_state_output_port(), policy.get_input_port_estimated_state()
     )
     builder.Connect(policy.get_output_port(), controller.get_input_port_desired_state())
     builder.Connect(

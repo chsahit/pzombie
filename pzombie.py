@@ -63,11 +63,7 @@ def make_env(env: Env):
     controller = builder.AddNamedSystem(
         "controller", CartesianStiffnessController(plant)
     )
-    num_objects = len(env.assets)
-    num_states = 13 * num_objects + 18
-    policy = builder.AddNamedSystem(
-        "policy", PolicySystem(plant, num_states, asset_indices)
-    )
+    policy = builder.AddNamedSystem("policy", PolicySystem(plant, asset_indices))
     builder.Connect(
         plant.get_state_output_port(), policy.get_input_port_estimated_state()
     )
@@ -86,5 +82,5 @@ def simulate_policy(pi, env, timeout: float = 10.0):
     policy_sys.policy = pi
     simulator = Simulator(env)
     simulator.Initialize()
-    # simulator.set_target_realtime_rate(1.0)
+    simulator.set_target_realtime_rate(2.0)
     simulator.AdvanceTo(timeout)

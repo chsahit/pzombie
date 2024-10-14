@@ -30,23 +30,29 @@ class PositionAction(AxisAlignedCartesianStiffnessAction):
 
 
 class InterpolationPolicy:
-    def __init__(self, qrob, goal_pose, total_time, grasp, panda):
-        self.start_time = None
-        self.done = None
+    def __init__(self, goal_pose, total_time, grasp, panda):
         self.total_time = total_time
         self.grasp = grasp
-        # waypoints
-        num_waypoints = 10
-        self.time_per_waypoint = float(total_time) / num_waypoints
-        R_WG = panda.fk(qrob).rotation()
-        curr_p_WG = panda.fk(qrob).translation()
-        vel = (1.0 / num_waypoints) * (goal_pose - curr_p_WG)
+        self.panda = panda
+        self.goal_pose = goal_pose
+        self.start_time = None
+        self.done = None
+        self.num_waypoints = 10
+        self.waypoints_q = None
+
+    def _compute_waypoints(self, qrob, num_waypoints: int = 10):
+        self.time_per_waypoint = float(self.total_time) / num_waypoints
+        R_WG = self.panda.fk(qrob).rotation()
+        curr_p_WG = self.panda.fk(qrob).translation()
+        vel = (1.0 / num_waypoints) * (self.goal_pose - curr_p_WG)
         pts = [curr_p_WG + (i * vel) for i in range(1, num_waypoints + 1)]
-        self.waypoints_q = [qrob] + [panda.ik(RigidTransform(R_WG, wp)) for wp in pts]
+        waypoints_q = [self.panda.ik(RigidTransform(R_WG, wp)) for wp in pts]
+        self.waypoints_q = [qrob] + waypoints_q
 
     def __call__(self, state, time):
         if self.start_time is None:
             self.start_time = time
+            self._compute_waypoints(state["panda"][:7])
         curr_wp = int((time - self.start_time) / self.time_per_waypoint) + 1
         if curr_wp == len(self.waypoints_q):
             self.done = True
@@ -57,3 +63,22 @@ class InterpolationPolicy:
         vel *= self.time_per_waypoint
         qdes = self.waypoints_q[curr_wp - 1] + vel * time_in_wp
         return PositionAction(qdes, self.grasp)
+
+
+class GripperPolicy:
+    def __init__(self, action: str):
+        assert action in ["close", "open"]
+        if action == "open":
+            self.action = 0.1
+        else:
+            self.action = 0.0
+        self.start_time = None
+        self.qdes = None
+        self.done = False
+
+    def __call__(self, state, time):
+        if self.start_time is None:
+            self.start_time = time
+            self.qdes = state["panda"][:7]
+        self.done = time > self.start_time + 1.0
+        return PositionAction(self.qdes, self.action)

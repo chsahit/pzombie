@@ -1,10 +1,8 @@
-erasing demo
-smarter ik joint centering
-get rid of hardcoding port sizes
+hydroelastic
+teleop
 vary finger sizes
 policies should get velocity as well
-factor out straightline policy?
 contact states/collision detection
+smarter ik joint centering
 ik get X_WB in example
 planning support
-

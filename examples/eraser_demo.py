@@ -6,63 +6,72 @@ import kinematics
 import pzombie
 
 
-class ErasePolicy:
+#  given the intiial pose of the eraser and whiteboard,
+#  return a sequence of policies to grasp the eraser
+#  and press the whiteboard
+def compute_plan(q0, panda):
+    eraser = q0["eraser"][4:7]
+    wb = q0["whiteboard"][4:7]
+    q_eraserhover = eraser + np.array([0, 0, 0.15])
+    pi_eraserhover = actions.InterpolationPolicy(q_eraserhover, 10.0, 0.075, panda)
+    q_erasergrasp = eraser + np.array([0, 0, 0.05])
+    pi_erasergrasp = actions.InterpolationPolicy(q_erasergrasp, 4.0, 0.075, panda)
+    pi_grasp = actions.GripperPolicy("close")
+    q_eraserlift = eraser + np.array([0.0, 0.0, 0.16])
+    pi_eraserlift = actions.InterpolationPolicy(q_eraserlift, 5.0, 0.0, panda)
+    q_place = wb + np.array([0.0, 0.0, 0.14])
+    pi_place = actions.InterpolationPolicy(q_place, 10.0, 0.0, panda)
+    return [pi_eraserhover, pi_erasergrasp, pi_grasp, pi_eraserlift, pi_place]
+
+
+class WipePolicy:
+    def __init__(self, panda_kinematics):
+        self.panda_kinematics = panda_kinematics
+        self.start_x = None
+        self.start_y = None
+        self.R_WG = None
+        self.start_time = None
+
+    def __call__(self, state, time):
+        if abs(state["eraser"][5]) < 0.1775:
+            if self.start_y is None:
+                self.start_time = time
+                self.start_x = state["eraser"][4]
+                self.start_y = state["eraser"][5]
+                self.R_WG = self.panda_kinematics.fk(state["panda"][:7]).rotation()
+
+            y_t = self.start_y + (0.01 * (time - self.start_time))
+            z_t = self.panda_kinematics.fk(state["panda"][:7]).translation()[2] - 0.05
+            p_WG_des = np.array([self.start_x, y_t, z_t])
+            desired_qrob = self.panda_kinematics.ik(RigidTransform(self.R_WG, p_WG_des))
+            K = np.array([50.0, 50.0, 100.0, 600.0, 600.0, 100.0])
+            return actions.AxisAlignedCartesianStiffnessAction(K, desired_qrob, 0.0)
+        else:
+            return actions.PositionAction(state["panda"][:7], 0.0)
+
+
+class FullErasePolicy:
     def __init__(self):
         self.panda_kinematics = kinematics.Kinematics()
         self.step = 0
-        self.curr_policy = None
-        self.start_y = None
+        self.place_plan = None
+        self.wipe_policy = WipePolicy(self.panda_kinematics)
 
     def __call__(self, state, time):
-        if (self.curr_policy is not None) and (self.curr_policy.done):
+        # one-time call to compute place_plan which is an
+        # "open-loop" sequence of motions to pick up eraser and put it on the wb
+        if self.place_plan is None:
+            self.place_plan = compute_plan(state, self.panda_kinematics)
+        # if current step in place_plan is completed, move to next step (sub-policy)
+        if self.step < len(self.place_plan) and self.place_plan[self.step].done:
             self.step += 1
-            self.curr_policy = None
-        if self.step == 0 and self.curr_policy is None:
-            hover_pose = state["eraser"][4:]
-            hover_pose[2] += 0.15
-            self.curr_policy = actions.InterpolationPolicy(
-                state["panda"][:7], hover_pose, 10.0, 0.075, self.panda_kinematics
-            )
-        elif self.step == 1 and self.curr_policy is None:
-            grasp_pose = state["eraser"][4:]
-            grasp_pose[2] += 0.05
-            self.curr_policy = actions.InterpolationPolicy(
-                state["panda"][:7], grasp_pose, 4.0, 0.075, self.panda_kinematics
-            )
-        elif self.step == 2 and self.curr_policy is None:
-            curr_pose = self.panda_kinematics.fk(state["panda"][:7]).translation()
-            self.curr_policy = actions.InterpolationPolicy(
-                state["panda"][:7], curr_pose, 1.0, 0.0, self.panda_kinematics
-            )
-        elif self.step == 3 and self.curr_policy is None:
-            whiteboard_hover = self.panda_kinematics.fk(state["panda"][:7])
-            whiteboard_hover = whiteboard_hover.multiply(
-                RigidTransform([0, 0.00, -0.07])
-            ).translation()
-            self.curr_policy = actions.InterpolationPolicy(
-                state["panda"][:7], whiteboard_hover, 10.0, 0.0, self.panda_kinematics
-            )
-        elif self.step == 4 and self.curr_policy is None:
-            wb_place = state["whiteboard"][4:7]
-            wb_place[2] += 0.15
-            self.curr_policy = actions.InterpolationPolicy(
-                state["panda"][:7], wb_place, 10.0, 0.0, self.panda_kinematics
-            )
-        elif self.step == 5:
-            breakpoint()
-            if abs(state["eraser"][5]) < 0.1775:
-                if self.start_y is None:
-                    self.start_y = state["eraser"][5]
-                p_WG_des = self.panda_kinematics.fk(state["panda"]).translation()
-                R_WG = self.panda_kinematics.fk(state["panda"]).rotation()
-                p_WG_des[1] = self.start_y + (0.01 * (time - 35.0))
-                p_WG_des[2] -= 0.05
-                desired_qrob = self.panda_kinematics.ik(RigidTransform(p_WG_des, R_WG))
-                K = np.array([50.0, 50.0, 100.0, 600.0, 600.0, 100.0])
-                return pzombie.AxisAlignedCartesianStiffnessAction(K, desired_qrob, 0.0)
-            else:
-                return pzombie.PositionAction(state["panda"][:7], 0.0)
-        return self.curr_policy(state, time)
+        # if still placing, pass state to current sub-policy in place plan
+        if self.step < len(self.place_plan):
+            pi_curr = self.place_plan[self.step]
+            return pi_curr(state, time)
+        # if we are done placing, we are wiping -- call that policy
+        else:
+            return self.wipe_policy(state, time)
 
 
 def test_simulation():
@@ -74,7 +83,7 @@ def test_simulation():
     )
     env = pzombie.Env([eraser, whiteboard])
     drake_env = pzombie.make_env(env)
-    pzombie.simulate_policy(ErasePolicy(), drake_env, timeout=40.0)
+    pzombie.simulate_policy(FullErasePolicy(), drake_env, timeout=40.0)
 
 
 if __name__ == "__main__":

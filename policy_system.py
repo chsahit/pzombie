@@ -3,15 +3,16 @@ from pydrake.all import BasicVector, LeafSystem, Value, ValueProducer
 
 class PolicySystem(LeafSystem):
     # TODO: need output caching
-    def __init__(self, plant, num_states: int, asset_indices):
+    def __init__(self, plant, asset_indices):
         LeafSystem.__init__(self)
         self.plant = plant
+        # K is 36 dimensional, panda has 9 positions and 9 vels
         self.output_port_xd = self.DeclareVectorOutputPort(
             "out", BasicVector(36 + 9 + 9), self.CalcOuput
         )
         self.policy = None
         self.input_port_index_estimated_state_ = self.DeclareVectorInputPort(
-            "estimated_state", num_states
+            "estimated_state", plant.num_multibody_states()
         ).get_index()
 
         self.plant_context = plant.CreateDefaultContext()

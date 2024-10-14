@@ -153,7 +153,7 @@ class CartesianStiffnessController(LeafSystem):
         q_err = x_d[: self.num_q] - x[: self.num_q]
         qd_err = x_d[-self.num_q :] - x[-self.num_q :]
         spring_damper_F = kp_q @ q_err + kd @ qd_err
-        spring_damper_F_mag = np.linalg.norm(spring_damper_F)
+        spring_damper_F_mag = np.linalg.norm(spring_damper_F[:7])
         if spring_damper_F_mag > 20:
             spring_damper_F = (spring_damper_F / spring_damper_F_mag) * 20
         tau += spring_damper_F

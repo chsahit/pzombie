@@ -1,4 +1,10 @@
 erasing demo
-fix RTR
+smarter ik joint centering
 get rid of hardcoding port sizes
+vary finger sizes
 policies should get velocity as well
+factor out straightline policy?
+contact states/collision detection
+ik get X_WB in example
+planning support
+

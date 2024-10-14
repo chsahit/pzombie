@@ -43,33 +43,6 @@ class Env:
         self.assets = assets
 
 
-class CartesianStiffnessAction:
-    def __init__(self, stiffness, joint_angles, gripper_width):
-        self.stiffness = stiffness
-        self.joint_angles = joint_angles
-        self.gripper_width = gripper_width
-
-    def serialize(self):
-        qdot = np.zeros((9,))
-        gripper_q = self.gripper_width / 2.0
-        q = np.concatenate([self.joint_angles, np.array([gripper_q, gripper_q])])
-        x_des = np.concatenate([q, qdot])
-        x_d_K = np.concatenate([self.stiffness.flatten(), x_des])
-        return x_d_K
-
-
-class AxisAlignedCartesianStiffnessAction(CartesianStiffnessAction):
-    def __init__(self, stiffness, joint_angles, gripper_width):
-        stiffness = np.diag(stiffness)
-        super().__init__(stiffness, joint_angles, gripper_width)
-
-
-class PositionAction(AxisAlignedCartesianStiffnessAction):
-    def __init__(self, joint_angles, gripper_width):
-        stiffness = np.array([100, 100, 100, 600, 600, 600])
-        super().__init__(stiffness, joint_angles, gripper_width)
-
-
 def make_env(env: Env):
     meshcat = StartMeshcat()
     builder = DiagramBuilder()
@@ -113,6 +86,5 @@ def simulate_policy(pi, env, timeout: float = 10.0):
     policy_sys.policy = pi
     simulator = Simulator(env)
     simulator.Initialize()
-    breakpoint()
-    simulator.set_target_realtime_rate(1.0)
+    # simulator.set_target_realtime_rate(1.0)
     simulator.AdvanceTo(timeout)

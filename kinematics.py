@@ -28,13 +28,15 @@ def _make_panda():
 
 
 class Kinematics:
-    def __init__(self):
+    def __init__(self, X_WB: RigidTransform = RigidTransform([-0.215, 0.0, 0.7])):
         self.plant = _make_panda()
         self.G = self.plant.GetFrameByName("panda_hand")
         self.B = self.plant.GetFrameByName("panda_link0")
         self.panda = self.plant.GetModelInstanceByName("panda")
+        self.X_WB = X_WB
 
-    def ik(self, X_BG: RigidTransform) -> np.ndarray:
+    def ik(self, X_WG: RigidTransform) -> np.ndarray:
+        X_BG = self.X_WB.InvertAndCompose(X_WG)
         ik = InverseKinematics(self.plant)
         ik.AddPositionConstraint(
             self.G,
@@ -76,4 +78,5 @@ class Kinematics:
         self.plant.SetDefaultPositions(self.panda, q)
         context = self.plant.CreateDefaultContext()
         X_BG = self.plant.CalcRelativeTransform(context, self.B, self.G)
-        return X_BG
+        X_WG = self.X_WB.multiply(X_BG)
+        return X_WG

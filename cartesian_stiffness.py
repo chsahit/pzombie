@@ -128,7 +128,7 @@ class CartesianStiffnessController(LeafSystem):
         J_g = self.get_cache_entry(self.jacobian_cache_idx_).Eval(context)
 
         tau = self.plant.CalcInverseDynamics(
-            plant_context, np.zeros((15,)), applied_forces
+            plant_context, np.zeros((self.plant.num_velocities(),)), applied_forces
         )
         Cv = self.plant.CalcBiasTerm(plant_context)
         tau -= Cv

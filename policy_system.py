@@ -37,7 +37,6 @@ class PolicySystem(LeafSystem):
         self.plant.SetPositionsAndVelocities(abstract_value.get_mutable_value(), state)
 
     def CalcOuput(self, context, output):
-        # raise NotImplementedError("only using panda state")
         assert self.policy is not None
         x_vec = self.get_input_port_estimated_state().Eval(context)[
             : self.plant.num_positions()

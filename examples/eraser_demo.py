@@ -24,30 +24,13 @@ def compute_plan(q0, panda):
     return [pi_eraserhover, pi_erasergrasp, pi_grasp, pi_eraserlift, pi_place]
 
 
-class WipePolicy:
-    def __init__(self, panda_kinematics):
-        self.panda_kinematics = panda_kinematics
-        self.start_x = None
-        self.start_y = None
-        self.R_WG = None
-        self.start_time = None
-
-    def __call__(self, state, time):
-        if abs(state["eraser"][5]) < 0.1775:
-            if self.start_y is None:
-                self.start_time = time
-                self.start_x = state["eraser"][4]
-                self.start_y = state["eraser"][5]
-                self.R_WG = self.panda_kinematics.fk(state["panda"][:7]).rotation()
-
-            y_t = self.start_y + (0.01 * (time - self.start_time))
-            z_t = self.panda_kinematics.fk(state["panda"][:7]).translation()[2] - 0.05
-            p_WG_des = np.array([self.start_x, y_t, z_t])
-            desired_qrob = self.panda_kinematics.ik(RigidTransform(self.R_WG, p_WG_des))
-            K = np.array([50.0, 50.0, 100.0, 600.0, 600.0, 100.0])
-            return actions.AxisAlignedCartesianStiffnessAction(K, desired_qrob, 0.0)
-        else:
-            return actions.PositionAction(state["panda"][:7], 0.0)
+def compute_wipe_policy(panda, state):
+    K = np.diag(np.array([10.0, 10.0, 100.0, 600.0, 600.0, 50.0]))
+    R_WG_0 = panda.fk(state["panda"][:7]).rotation()
+    p_WG_0 = panda.fk(state["panda"][:7]).translation() - np.array([0, 0, 0.05])
+    X_WG_0 = RigidTransform(R_WG_0, p_WG_0)
+    p_WG_des = np.array([p_WG_0[0], 0.1775, p_WG_0[2]])
+    return actions.InterpolationPolicy(p_WG_des, 10.0, 0.0, panda, K=K, start=X_WG_0)
 
 
 class FullErasePolicy:
@@ -55,7 +38,7 @@ class FullErasePolicy:
         self.panda_kinematics = kinematics.Kinematics()
         self.step = 0
         self.place_plan = None
-        self.wipe_policy = WipePolicy(self.panda_kinematics)
+        self.wipe_policy = None  # WipePolicy(self.panda_kinematics)
 
     def __call__(self, state, time):
         # one-time call to compute place_plan which is an
@@ -71,6 +54,8 @@ class FullErasePolicy:
             return pi_curr(state, time)
         # if we are done placing, we are wiping -- call that policy
         else:
+            if self.wipe_policy is None:
+                self.wipe_policy = compute_wipe_policy(self.panda_kinematics, state)
             return self.wipe_policy(state, time)
 
 
@@ -83,7 +68,7 @@ def test_simulation():
     )
     env = pzombie.Env([eraser, whiteboard])
     drake_env = pzombie.make_env(env)
-    pzombie.simulate_policy(FullErasePolicy(), drake_env, timeout=40.0)
+    pzombie.simulate_policy(FullErasePolicy(), drake_env, timeout=60.0)
 
 
 if __name__ == "__main__":

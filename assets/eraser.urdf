@@ -19,6 +19,11 @@
       <geometry>
         <box size="0.12 0.05 0.05"/>
       </geometry>
+      <drake:proximity_properties>
+        <drake:compliant_hydroelastic/>
+        <drake:mu_dynamic value="1.0"/>
+        <drake:hydroelastic_modulus value="1.0e5"/>
+      </drake:proximity_properties>
     </collision>
   </link>
 </robot>

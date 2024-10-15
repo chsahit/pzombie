@@ -46,9 +46,9 @@ class Kinematics:
             X_BG.translation(),
         )
         ik.AddOrientationConstraint(
-            self.G,
-            RotationMatrix(),
             self.B,
+            RotationMatrix(),
+            self.G,
             X_BG.rotation(),
             0.0,
         )

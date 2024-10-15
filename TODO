@@ -1,8 +1,8 @@
-hydroelastic
 teleop
-vary finger sizes
 policies should get velocity as well
 contact states/collision detection
+readme
+should we even return anything from make env?
 smarter ik joint centering
 ik get X_WB in example
 planning support

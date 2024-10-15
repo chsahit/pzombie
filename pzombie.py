@@ -4,7 +4,9 @@ import numpy as np
 from pydrake.all import (
     AddDefaultVisualization,
     AddMultibodyPlantSceneGraph,
+    ContactModel,
     DiagramBuilder,
+    DiscreteContactApproximation,
     Parser,
     Simulator,
     StartMeshcat,
@@ -56,6 +58,8 @@ def make_env(env: Env):
         asset_idx = parser.AddModels(asset.path)
         assert len(asset_idx) == 1
         asset_indices[asset.name] = asset_idx[0]
+    plant.set_discrete_contact_approximation(DiscreteContactApproximation.kLagged)
+    plant.set_contact_model(ContactModel.kPoint)
     plant.Finalize()
     plant.SetDefaultPositions(panda, env.panda_pose)
     for asset in env.assets:

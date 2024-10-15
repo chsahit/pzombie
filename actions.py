@@ -1,6 +1,8 @@
 import numpy as np
 from pydrake.all import RigidTransform
 
+DEFAULT_K = np.diag(np.array([100, 100, 100, 600, 600, 600]))
+
 
 class CartesianStiffnessAction:
     def __init__(self, stiffness, joint_angles, gripper_width):
@@ -25,38 +27,41 @@ class AxisAlignedCartesianStiffnessAction(CartesianStiffnessAction):
 
 class PositionAction(AxisAlignedCartesianStiffnessAction):
     def __init__(self, joint_angles, gripper_width):
-        stiffness = np.array([100, 100, 100, 600, 600, 600])
-        super().__init__(stiffness, joint_angles, gripper_width)
+        super().__init__(np.diag(DEFAULT_K), joint_angles, gripper_width)
 
 
 class InterpolationPolicy:
-    def __init__(self, goal_pose, total_time, grasp, panda):
+    def __init__(self, goal_pose, total_time, grasp, panda, K=DEFAULT_K, start=None):
         self.total_time = total_time
         self.grasp = grasp
         self.panda = panda
+        self.start_interp = start
+
         self.goal_pose = goal_pose
         self.start_time = None
         self.done = None
         self.num_waypoints = 10
         self.waypoints_q = None
 
-    def _compute_waypoints(self, qrob, num_waypoints: int = 10):
+    def _compute_waypoints(self, X_WG, qrob, num_waypoints: int = 10):
         self.time_per_waypoint = float(self.total_time) / num_waypoints
-        R_WG = self.panda.fk(qrob).rotation()
-        curr_p_WG = self.panda.fk(qrob).translation()
+        R_WG = X_WG.rotation()
+        curr_p_WG = X_WG.translation()
         vel = (1.0 / num_waypoints) * (self.goal_pose - curr_p_WG)
         pts = [curr_p_WG + (i * vel) for i in range(1, num_waypoints + 1)]
         waypoints_q = [self.panda.ik(RigidTransform(R_WG, wp)) for wp in pts]
         self.waypoints_q = [qrob] + waypoints_q
 
     def __call__(self, state, time):
+        if self.start_interp is None:
+            self.start_interp = self.panda.fk(state["panda"][:7])
         if self.start_time is None:
             self.start_time = time
-            self._compute_waypoints(state["panda"][:7])
+            self._compute_waypoints(self.start_interp, state["panda"][:7])
         curr_wp = int((time - self.start_time) / self.time_per_waypoint) + 1
-        if curr_wp == len(self.waypoints_q):
+        if curr_wp >= len(self.waypoints_q):
             self.done = True
-            return PositionAction(state["panda"][:7], self.grasp)
+            return PositionAction(self.waypoints_q[-1], self.grasp)
         time_in_wp = time - (self.time_per_waypoint * (curr_wp - 1)) - self.start_time
         assert time_in_wp >= 0
         vel = self.waypoints_q[curr_wp] - self.waypoints_q[curr_wp - 1]

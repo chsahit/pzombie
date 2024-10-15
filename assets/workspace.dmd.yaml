@@ -10,7 +10,7 @@ directives:
       rotation: !Rpy { deg: [0, 0, 0] }
 - add_model:
     name: panda
-    file: package://drake_models/franka_description/urdf/panda_arm_hand.urdf
+    file: package://assets/hydro_panda.urdf
 - add_weld:
     parent: table::box
     child: panda::panda_link0

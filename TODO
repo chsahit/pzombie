@@ -1,5 +1,3 @@
-rectangular fingers
-teleop
 readme
 should we even return anything from make env?
     - we should return nice states for caching purposes

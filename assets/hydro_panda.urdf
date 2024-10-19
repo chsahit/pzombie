@@ -654,25 +654,27 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 0.007 0.045"/>
       <geometry>
-        <sphere radius="0.012"/>
+        <box size="0.012 0.012 0.018"/>
+          <!--<sphere radius="0.012"/>-->
       </geometry>
       <drake:proximity_properties>
         <drake:compliant_hydroelastic/>
         <drake:mu_dynamic value="1.0"/>
-        <drake:hydroelastic_modulus value="1.0e5"/>
-        <drake:mesh_resolution_hint value="0.07"/>
+        <drake:hydroelastic_modulus value="1.0e6"/>
+          <!--drake:mesh_resolution_hint value="0.07"/>-->
       </drake:proximity_properties>
     </collision>
     <collision>
       <origin rpy="0 0 0" xyz="0 0.015 0.03"/>
       <geometry>
-        <sphere radius="0.012"/>
+        <box size="0.012 0.012 0.018"/>
+          <!--<sphere radius="0.012"/>-->
       </geometry>
       <drake:proximity_properties>
         <drake:compliant_hydroelastic/>
         <drake:mu_dynamic value="1.0"/>
-        <drake:hydroelastic_modulus value="1.0e5"/>
-        <drake:mesh_resolution_hint value="0.07"/>
+        <drake:hydroelastic_modulus value="1.0e6"/>
+          <!--<drake:mesh_resolution_hint value="0.07"/>-->
       </drake:proximity_properties>
     </collision>
   </link>
@@ -691,25 +693,27 @@
     <collision>
       <origin rpy="0 0 0" xyz="0 -0.007 0.045"/>
       <geometry>
-        <sphere radius="0.012"/>
+        <box size="0.012 0.012 0.018"/>
+          <!--<sphere radius="0.012"/>-->
       </geometry>
       <drake:proximity_properties>
         <drake:compliant_hydroelastic/>
         <drake:mu_dynamic value="1.0"/>
-        <drake:hydroelastic_modulus value="1.0e5"/>
-        <drake:mesh_resolution_hint value="0.07"/>
+        <drake:hydroelastic_modulus value="1.0e6"/>
+          <!--<drake:mesh_resolution_hint value="0.07"/>-->
       </drake:proximity_properties>
     </collision>
     <collision>
       <origin rpy="0 0 0" xyz="0 -0.015 0.03"/>
       <geometry>
-        <sphere radius="0.012"/>
+        <box size="0.012 0.012 0.018"/>
+          <!--<sphere radius="0.012"/>-->
       </geometry>
       <drake:proximity_properties>
         <drake:compliant_hydroelastic/>
         <drake:mu_dynamic value="1.0"/>
-        <drake:hydroelastic_modulus value="1.0e5"/>
-        <drake:mesh_resolution_hint value="0.07"/>
+        <drake:hydroelastic_modulus value="1.0e6"/>
+          <!--<drake:mesh_resolution_hint value="0.07"/>-->
       </drake:proximity_properties>
     </collision>
   </link>

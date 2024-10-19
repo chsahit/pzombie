@@ -1,8 +1,8 @@
+rectangular fingers
 teleop
-policies should get velocity as well
-contact states/collision detection
 readme
 should we even return anything from make env?
+    - we should return nice states for caching purposes
 smarter ik joint centering
 ik get X_WB in example
 planning support

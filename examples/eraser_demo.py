@@ -38,7 +38,7 @@ class FullErasePolicy:
         self.panda_kinematics = kinematics.Kinematics()
         self.step = 0
         self.place_plan = None
-        self.wipe_policy = None  # WipePolicy(self.panda_kinematics)
+        self.wipe_policy = None
 
     def __call__(self, state, time):
         # one-time call to compute place_plan which is an

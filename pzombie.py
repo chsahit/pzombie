@@ -2,14 +2,17 @@ from typing import List
 
 import numpy as np
 from pydrake.all import (
+    AbstractValue,
     AddDefaultVisualization,
     AddMultibodyPlantSceneGraph,
     ContactModel,
+    ContactResults,
     DiagramBuilder,
     DiscreteContactApproximation,
     Parser,
     Simulator,
     StartMeshcat,
+    ZeroOrderHold,
 )
 
 from cartesian_stiffness import CartesianStiffnessController
@@ -59,7 +62,7 @@ def make_env(env: Env):
         assert len(asset_idx) == 1
         asset_indices[asset.name] = asset_idx[0]
     plant.set_discrete_contact_approximation(DiscreteContactApproximation.kLagged)
-    plant.set_contact_model(ContactModel.kPoint)
+    # plant.set_contact_model(ContactModel.kPoint)
     plant.Finalize()
     plant.SetDefaultPositions(panda, env.panda_pose)
     for asset in env.assets:
@@ -67,10 +70,19 @@ def make_env(env: Env):
     controller = builder.AddNamedSystem(
         "controller", CartesianStiffnessController(plant)
     )
-    policy = builder.AddNamedSystem("policy", PolicySystem(plant, asset_indices))
+    policy = builder.AddNamedSystem(
+        "policy", PolicySystem(plant, asset_indices, scene_graph)
+    )
+    contact_zoh = builder.AddNamedSystem(
+        "zoh", ZeroOrderHold(0.0, AbstractValue.Make(ContactResults()), 0.01)
+    )
     builder.Connect(
         plant.get_state_output_port(), policy.get_input_port_estimated_state()
     )
+    builder.Connect(
+        plant.get_contact_results_output_port(), contact_zoh.get_input_port()
+    )
+    builder.Connect(contact_zoh.get_output_port(), policy.get_input_port_contact())
     builder.Connect(policy.get_output_port(), controller.get_input_port_desired_state())
     builder.Connect(
         plant.get_state_output_port(panda), controller.get_input_port_estimated_state()
@@ -81,10 +93,10 @@ def make_env(env: Env):
     return diagram
 
 
-def simulate_policy(pi, env, timeout: float = 10.0):
+def simulate_policy(pi, env, timeout: float = 10.0, target_rtr: float = 0.0):
     policy_sys = env.GetSubsystemByName("policy")
     policy_sys.policy = pi
     simulator = Simulator(env)
     simulator.Initialize()
-    simulator.set_target_realtime_rate(2.0)
+    simulator.set_target_realtime_rate(target_rtr)
     simulator.AdvanceTo(timeout)

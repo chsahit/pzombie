@@ -1,6 +1,7 @@
 readme
 should we even return anything from make env?
     - we should return nice states for caching purposes
-smarter ik joint centering
-ik get X_WB in example
-planning support
+        - planning support
+
+Flip cup demo
+Pancake demo

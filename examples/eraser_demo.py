@@ -68,7 +68,7 @@ def test_simulation():
     )
     env = pzombie.Env([eraser, whiteboard])
     drake_env = pzombie.make_env(env)
-    pzombie.simulate_policy(FullErasePolicy(), drake_env, timeout=60.0)
+    pzombie.simulate_policy(FullErasePolicy(env), drake_env, timeout=60.0)
 
 
 if __name__ == "__main__":

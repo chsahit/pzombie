@@ -142,7 +142,7 @@ class CartesianStiffnessController(LeafSystem):
 
         kp_q = J_g.T @ Kp @ J_g
         finger_gains = np.array(
-            [[0, 0, 0, 0, 0, 0, 0, 100, 0], [0, 0, 0, 0, 0, 0, 0, 0, 100]]
+            [[0, 0, 0, 0, 0, 0, 0, 1000, 0], [0, 0, 0, 0, 0, 0, 0, 0, 1000]]
         )
         kp_q = np.hstack((kp_q, np.zeros((7, 2))))
         kp_q = np.vstack((kp_q, finger_gains))
@@ -155,8 +155,8 @@ class CartesianStiffnessController(LeafSystem):
         spring_damper_F = kp_q @ q_err + kd @ qd_err
         spring_damper_F_mag = np.linalg.norm(spring_damper_F[:7])
         if spring_damper_F_mag > 20:
-            spring_damper_F = (spring_damper_F / spring_damper_F_mag) * 20
+            spring_damper_F[:7] = (spring_damper_F[:7] / spring_damper_F_mag) * 20
         tau += spring_damper_F
-        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 10, 10])
+        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 100, 100])
         tau = np.clip(tau, -lims, lims)
         output.SetFromVector(tau)

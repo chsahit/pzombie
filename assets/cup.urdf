@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<!--from https://github.com/caelan/pybullet-planning/blob/master/models/cup.urdf-->
+<robot name="sink">
+    <link name="base_link">
+    <inertial>
+      <mass value="0.05"/>
+      <inertia ixx="0.000021" ixy="0" ixz="0" iyy="0.00007" iyz="0" izz="0.00007"/>
+    </inertial>
+
+     <visual>
+      <origin xyz="0 0 -0.0745" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.07 0.001" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 0.4" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0 0.0345 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.001 0.15" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 0.4" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0 -0.0345 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.001 0.15" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 0.4" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="0.0345 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.001 0.07 0.15" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 0.4" />
+      </material>
+    </visual>
+    <visual>
+      <origin xyz="-0.0345 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.001 0.07 0.15" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 0.4" />
+      </material>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 -0.0745" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.07 0.001" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 0.0345 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.001 0.15" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0 -0.0345 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.07 0.001 0.15" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="0.0345 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.001 0.07 0.15" />
+      </geometry>
+    </collision>
+    <collision>
+      <origin xyz="-0.0345 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.001 0.07 0.15" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

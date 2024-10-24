@@ -75,6 +75,10 @@ class Kinematics:
         return soln[:7]
 
     def fk(self, joint_angles: np.ndarray) -> RigidTransform:
+        if joint_angles.shape[0] != 7:
+            print(
+                "kinematics warning, joint_angles should be in R7 (discard finger joints)"
+            )
         q = np.concatenate([joint_angles, np.array([0, 0])])
         self.plant.SetDefaultPositions(self.panda, q)
         context = self.plant.CreateDefaultContext()

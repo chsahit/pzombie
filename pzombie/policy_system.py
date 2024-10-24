@@ -8,7 +8,7 @@ from pydrake.all import (
     ValueProducer,
 )
 
-import state
+from pzombie import components
 
 
 class PolicySystem(LeafSystem):
@@ -66,14 +66,14 @@ class PolicySystem(LeafSystem):
             B = self.plant.GetBodyFromFrameId(self.inspector.GetFrameId(surface.id_N()))
             centroid = surface.centroid()
             F = contact_results.hydroelastic_contact_info(h_contact).F_Ac_W()
-            contacts.append(state.Contact(A.name(), B.name(), centroid, F))
+            contacts.append(components.Contact(A.name(), B.name(), centroid, F))
         for p_contact_idx in range(contact_results.num_point_pair_contacts()):
             p_contact = contact_results.point_pair_contact_info(p_contact_idx)
-            A = self.plant.GetBodyFromFrameId(p_contact.bodyA_index())
-            B = self.plant.GetBodyFromFrameId(p_contact.bodyB_index())
+            A = self.plant.get_body(p_contact.bodyA_index())
+            B = self.plant.get_body(p_contact.bodyB_index())
             p = p_contact.contact_point()
             F = p_contact.contact_force()
-            contacts.append(state.Contact(A.name(), B.name(), p, F))
+            contacts.append(components.Contact(A.name(), B.name(), p, F))
 
         return contacts
 
@@ -93,6 +93,6 @@ class PolicySystem(LeafSystem):
             asset_v = self.plant.GetVelocitiesFromArray(asset_idx, v_vec)
             x[asset_name] = np.concatenate([asset_q, asset_v])
         t = context.get_time()
-        s = state.State(x, contacts)
+        s = components.State(x, contacts)
         a = self.policy(s, t).serialize()
         output.SetFromVector(a)

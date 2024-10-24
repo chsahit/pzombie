@@ -1,7 +1,2 @@
-readme
-should we even return anything from make env?
-    - we should return nice states for caching purposes
-        - planning support
-
-Flip cup demo
-Pancake demo
+should we even return anything from make env? no, but return things from sim
+smarter damping?

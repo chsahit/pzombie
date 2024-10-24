@@ -4,9 +4,7 @@ from curses import wrapper
 import numpy as np
 from pydrake.all import RigidTransform
 
-import actions
-import kinematics
-import pzombie
+from pzombie import actions, components, kinematics, pzombie
 
 
 class TeleopPolicy:
@@ -59,16 +57,15 @@ class TeleopPolicy:
 
 def test_simulation(stdscr):
     stdscr.nodelay(1)
-    eraser = pzombie.Asset(
+    eraser = components.Asset(
         "eraser", "assets/eraser.urdf", np.array([1, 0, 0, 0, 0.3, 0.225, 0.725])
     )
-    whiteboard = pzombie.Asset(
+    whiteboard = components.Asset(
         "whiteboard", "assets/whiteboard.urdf", np.array([1, 0, 0, 0, 0.2, 0.0, 0.71])
     )
-    env = pzombie.Env([eraser, whiteboard])
-    drake_env = pzombie.make_env(env)
+    env = components.Env([eraser, whiteboard])
     pzombie.simulate_policy(
-        TeleopPolicy(stdscr), drake_env, timeout=300.0, target_rtr=1.0
+        TeleopPolicy(stdscr), env, timeout=300.0, target_rtr=1.0
     )
 
 

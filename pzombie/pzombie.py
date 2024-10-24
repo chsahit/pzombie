@@ -1,11 +1,7 @@
-from typing import List
-
-import numpy as np
 from pydrake.all import (
     AbstractValue,
     AddDefaultVisualization,
     AddMultibodyPlantSceneGraph,
-    ContactModel,
     ContactResults,
     DiagramBuilder,
     DiscreteContactApproximation,
@@ -15,40 +11,12 @@ from pydrake.all import (
     ZeroOrderHold,
 )
 
-from cartesian_stiffness import CartesianStiffnessController
-from policy_system import PolicySystem
-
-DEFAULT_PANDA_ANGLES = np.array(
-    [
-        0.0796904,
-        0.18628879,
-        -0.07548908,
-        -2.42085905,
-        0.06961755,
-        2.52396334,
-        0.6796144,
-        0.03,
-        0.03,
-    ]
-)
+from pzombie.cartesian_stiffness import CartesianStiffnessController
+from pzombie.components import Env
+from pzombie.policy_system import PolicySystem
 
 
-class Asset:
-    def __init__(self, name, path, pose):
-        self.name = name
-        self.path = path
-        self.pose = pose
-
-
-class Env:
-    def __init__(
-        self, assets: List[Asset], panda_pose: np.ndarray = DEFAULT_PANDA_ANGLES
-    ):
-        self.panda_pose = panda_pose
-        self.assets = assets
-
-
-def make_env(env: Env):
+def _make_env(env: Env):
     meshcat = StartMeshcat()
     builder = DiagramBuilder()
     plant, scene_graph = AddMultibodyPlantSceneGraph(builder, time_step=1e-3)
@@ -94,9 +62,10 @@ def make_env(env: Env):
 
 
 def simulate_policy(pi, env, timeout: float = 10.0, target_rtr: float = 0.0):
-    policy_sys = env.GetSubsystemByName("policy")
+    drake_env = _make_env(env)
+    policy_sys = drake_env.GetSubsystemByName("policy")
     policy_sys.policy = pi
-    simulator = Simulator(env)
+    simulator = Simulator(drake_env)
     simulator.Initialize()
     simulator.set_target_realtime_rate(target_rtr)
     simulator.AdvanceTo(timeout)

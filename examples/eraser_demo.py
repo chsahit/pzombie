@@ -1,10 +1,7 @@
 import numpy as np
 from pydrake.all import RigidTransform
 
-import actions
-import kinematics
-import pzombie
-
+from pzombie import actions, kinematics, components, pzombie
 
 #  given the intiial pose of the eraser and whiteboard,
 #  return a sequence of policies to grasp the eraser
@@ -29,7 +26,7 @@ def compute_wipe_policy(panda, state):
     R_WG_0 = panda.fk(state["panda"][:7]).rotation()
     p_WG_0 = panda.fk(state["panda"][:7]).translation() - np.array([0, 0, 0.05])
     X_WG_0 = RigidTransform(R_WG_0, p_WG_0)
-    p_WG_des = np.array([p_WG_0[0], 0.1775, p_WG_0[2]])
+    p_WG_des = np.array([p_WG_0[0], 0.175, p_WG_0[2]])
     return actions.InterpolationPolicy(p_WG_des, 10.0, 0.0, panda, K=K, start=X_WG_0)
 
 
@@ -60,15 +57,14 @@ class FullErasePolicy:
 
 
 def test_simulation():
-    eraser = pzombie.Asset(
+    eraser = components.Asset(
         "eraser", "assets/eraser.urdf", np.array([1, 0, 0, 0, 0.3, 0.225, 0.725])
     )
-    whiteboard = pzombie.Asset(
+    whiteboard = components.Asset(
         "whiteboard", "assets/whiteboard.urdf", np.array([1, 0, 0, 0, 0.2, 0.0, 0.71])
     )
-    env = pzombie.Env([eraser, whiteboard])
-    drake_env = pzombie.make_env(env)
-    pzombie.simulate_policy(FullErasePolicy(env), drake_env, timeout=60.0)
+    env = components.Env([eraser, whiteboard])
+    pzombie.simulate_policy(FullErasePolicy(), env, timeout=60.0)
 
 
 if __name__ == "__main__":

@@ -118,6 +118,29 @@ class CartesianStiffnessController(LeafSystem):
             plant_context, cache_val.get_mutable_value()
         )
 
+    def _compute_damping_mat(self, K_cart, K_q, J):
+        K_cart_is_diagonal = np.array_equal(np.diag(np.diag(K_cart)), K_cart)
+        if K_cart_is_diagonal:
+            B_cart = 3 * np.sqrt(K_cart)
+            B = J.T @ B_cart @ J
+            B = np.hstack((B, np.zeros((7, 2))))
+            B = np.vstack((B, np.zeros((2, 9))))
+            return B
+        else:
+            B = np.eye(9)
+            for i in range(9):
+                B[i, i] = 3 * np.sqrt(K_q[i, i])
+            return B
+
+    def _circle_difference(self, qd, q0):
+        q_err = np.zeros((9,))
+        for i in range(7):
+            diff = qd[i] - q0[i]
+            q_err[i] = (diff + np.pi) % (2 * np.pi) - np.pi
+        q_err[7] = qd[7] - q0[7]
+        q_err[8] = qd[8] - q0[8]
+        return q_err
+
     def CalcOutputForce(self, context, output):
         plant_context = self.get_cache_entry(self.plant_context_cache_index_).Eval(
             context
@@ -146,17 +169,12 @@ class CartesianStiffnessController(LeafSystem):
         )
         kp_q = np.hstack((kp_q, np.zeros((7, 2))))
         kp_q = np.vstack((kp_q, finger_gains))
-        kd_dim = 9
-        kd = np.eye(kd_dim)
-        for i in range(kd_dim):
-            kd[i, i] = 2 * np.sqrt(kp_q[i, i])
-        q_err = x_d[: self.num_q] - x[: self.num_q]
+        kd = self._compute_damping_mat(Kp, kp_q, J_g)
+        q_err = self._circle_difference(x_d[: self.num_q], x[: self.num_q])
         qd_err = x_d[-self.num_q :] - x[-self.num_q :]
         spring_damper_F = kp_q @ q_err + kd @ qd_err
         spring_damper_F_mag = np.linalg.norm(spring_damper_F[:7])
         if spring_damper_F_mag > 20:
             spring_damper_F[:7] = (spring_damper_F[:7] / spring_damper_F_mag) * 20
         tau += spring_damper_F
-        lims = np.array([87.0, 87.0, 87.0, 87, 12, 12, 12, 100, 100])
-        tau = np.clip(tau, -lims, lims)
         output.SetFromVector(tau)

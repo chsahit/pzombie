@@ -1,7 +1,7 @@
 import numpy as np
 from pydrake.all import RigidTransform
 
-from pzombie import actions, kinematics, components, pzombie
+from pzombie import actions, components, kinematics, pzombie
 
 
 #  given the intiial pose of the eraser and whiteboard,

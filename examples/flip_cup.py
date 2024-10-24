@@ -2,7 +2,6 @@ import numpy as np
 
 from pzombie import actions, components, pzombie
 
-
 q0_panda = np.array(
     [
         -0.8931614063267244,
@@ -35,7 +34,7 @@ q_flip[-1] += np.pi
 
 
 def open_loop_flip_policy(state, time):
-    if time < 10.0:  # grasp the cup
+    if time < 5.0:  # grasp the cup
         return actions.PositionAction(grasp_pose, components.GRIPPER_CLOSE)
     elif time < 13.0:  # lift the gripper
         return actions.PositionAction(q_lift, components.GRIPPER_CLOSE)

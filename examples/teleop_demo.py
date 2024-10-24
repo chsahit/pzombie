@@ -14,7 +14,7 @@ class TeleopPolicy:
         self.last_called_gripper = -1.0
         self.sp_R7 = None
         self.sp_SE3 = None
-        self.gripper = 1.0
+        self.gripper = components.GRIPPER_OPEN
         self.K = np.diag(np.array([40.0, 40.0, 100.0, 200.0, 200.0, 200.0]))
         # self.K = np.diag(np.array([100.0, 100.0, 100.0, 600.0, 600.0, 600.0]))
         self.key_buf = []
@@ -64,9 +64,7 @@ def test_simulation(stdscr):
         "whiteboard", "assets/whiteboard.urdf", np.array([1, 0, 0, 0, 0.2, 0.0, 0.71])
     )
     env = components.Env([eraser, whiteboard])
-    pzombie.simulate_policy(
-        TeleopPolicy(stdscr), env, timeout=300.0, target_rtr=1.0
-    )
+    pzombie.simulate_policy(TeleopPolicy(stdscr), env, timeout=300.0, target_rtr=1.0)
 
 
 if __name__ == "__main__":

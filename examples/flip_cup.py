@@ -36,13 +36,13 @@ q_flip[-1] += np.pi
 
 def open_loop_flip_policy(state, time):
     if time < 10.0:  # grasp the cup
-        return actions.PositionAction(grasp_pose, 0.0)
+        return actions.PositionAction(grasp_pose, components.GRIPPER_CLOSE)
     elif time < 13.0:  # lift the gripper
-        return actions.PositionAction(q_lift, 0.0)
+        return actions.PositionAction(q_lift, components.GRIPPER_CLOSE)
     elif time < 18.0:  # flip the hand
-        return actions.PositionAction(q_flip, 0.0)
+        return actions.PositionAction(q_flip, components.GRIPPER_CLOSE)
     else:
-        return actions.PositionAction(q_flip, 1.0)
+        return actions.PositionAction(q_flip, components.GRIPPER_OPEN)
 
 
 def make_environment():

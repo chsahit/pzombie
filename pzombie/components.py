@@ -17,6 +17,9 @@ DEFAULT_PANDA_ANGLES = np.array(
     ]
 )
 
+GRIPPER_OPEN = 1.0
+GRIPPER_CLOSE = 0.0
+
 
 class Asset:
     def __init__(self, name, path, pose):

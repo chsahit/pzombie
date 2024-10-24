@@ -3,6 +3,7 @@ from pydrake.all import RigidTransform
 
 from pzombie import actions, kinematics, components, pzombie
 
+
 #  given the intiial pose of the eraser and whiteboard,
 #  return a sequence of policies to grasp the eraser
 #  and press the whiteboard
@@ -10,14 +11,22 @@ def compute_plan(q0, panda):
     eraser = q0["eraser"][4:7]
     wb = q0["whiteboard"][4:7]
     q_eraserhover = eraser + np.array([0, 0, 0.15])
-    pi_eraserhover = actions.InterpolationPolicy(q_eraserhover, 10.0, 0.075, panda)
+    pi_eraserhover = actions.InterpolationPolicy(
+        q_eraserhover, 10.0, components.GRIPPER_OPEN, panda
+    )
     q_erasergrasp = eraser + np.array([0, 0, 0.05])
-    pi_erasergrasp = actions.InterpolationPolicy(q_erasergrasp, 4.0, 0.075, panda)
+    pi_erasergrasp = actions.InterpolationPolicy(
+        q_erasergrasp, 4.0, components.GRIPPER_OPEN, panda
+    )
     pi_grasp = actions.GripperPolicy("close")
     q_eraserlift = eraser + np.array([0.0, 0.0, 0.16])
-    pi_eraserlift = actions.InterpolationPolicy(q_eraserlift, 5.0, 0.0, panda)
+    pi_eraserlift = actions.InterpolationPolicy(
+        q_eraserlift, 5.0, components.GRIPPER_CLOSE, panda
+    )
     q_place = wb + np.array([0.0, 0.0, 0.14])
-    pi_place = actions.InterpolationPolicy(q_place, 10.0, 0.0, panda)
+    pi_place = actions.InterpolationPolicy(
+        q_place, 10.0, components.GRIPPER_CLOSE, panda
+    )
     return [pi_eraserhover, pi_erasergrasp, pi_grasp, pi_eraserlift, pi_place]
 
 
@@ -27,7 +36,9 @@ def compute_wipe_policy(panda, state):
     p_WG_0 = panda.fk(state["panda"][:7]).translation() - np.array([0, 0, 0.05])
     X_WG_0 = RigidTransform(R_WG_0, p_WG_0)
     p_WG_des = np.array([p_WG_0[0], 0.175, p_WG_0[2]])
-    return actions.InterpolationPolicy(p_WG_des, 10.0, 0.0, panda, K=K, start=X_WG_0)
+    return actions.InterpolationPolicy(
+        p_WG_des, 10.0, components.GRIPPER_CLOSE, panda, K=K, start=X_WG_0
+    )
 
 
 class FullErasePolicy:

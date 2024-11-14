@@ -1,0 +1,30 @@
+[project]
+name = "pzombie"
+version = "0.0.0"
+description = "pzombie"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+keywords = ["robotics"]
+authors = [
+    { name = "Sahit", email = "sahit@mit.edu" },
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+]
+
+dependencies = [
+    "numpy",
+    "drake",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff"
+]
+
+[tool.ruff]
+line-length = 120
+
+[tool.setuptools.packages]
+find = { include = ["pzombie", "pzombie.*"] }

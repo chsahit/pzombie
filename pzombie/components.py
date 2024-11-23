@@ -37,9 +37,10 @@ class Env:
 
 
 class State:
-    def __init__(self, state_dict, contact_state):
+    def __init__(self, state_dict, contact_state, jacobian):
         self._state = state_dict
         self.contact_state = contact_state
+        self.jacobian = jacobian
 
     def __getitem__(self, idx):
         return self._state[idx]

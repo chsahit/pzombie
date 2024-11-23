@@ -16,6 +16,14 @@ class TeleopPolicy:
         self.sp_SE3 = None
         self.gripper = components.GRIPPER_OPEN
         self.K = np.diag(np.array([40.0, 40.0, 100.0, 200.0, 200.0, 200.0]))
+        self.key_to_tf = {
+            ord("w"): RigidTransform([0.01, 0, 0]),
+            ord("s"): RigidTransform([-0.01, 0, 0]),
+            ord("a"): RigidTransform([0, -0.01, 0]),
+            ord("d"): RigidTransform([0, 0.01, 0]),
+            curses.KEY_UP: RigidTransform([0, 0.0, 0.01]),
+            curses.KEY_DOWN: RigidTransform([0.0, 0.0, -0.01]),
+        }
         # self.K = np.diag(np.array([100.0, 100.0, 100.0, 600.0, 600.0, 600.0]))
         self.key_buf = []
         self.stdscr = stdscr
@@ -27,20 +35,14 @@ class TeleopPolicy:
         elif k != -1 and (k not in self.key_buf):
             self.key_buf.append(k)
 
-    def update_sp(self, panda_joints):
-        if ord("w") in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([0.01, 0, 0]))
-        if ord("s") in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([-0.01, 0, 0]))
-        if ord("a") in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([0, -0.01, 0]))
-        if ord("d") in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([0, 0.01, 0]))
-        if curses.KEY_UP in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([0, 0, -0.01]))
-        if curses.KEY_DOWN in self.key_buf:
-            self.sp_SE3 = self.sp_SE3.multiply(RigidTransform([0, 0, 0.01]))
-        self.sp_R7 = self.panda.ik(self.sp_SE3, joint_center=panda_joints)
+    def update_sp(self, panda_joints, J):
+        translation = np.array([0.0, 0.0, 0.0])
+        for k in set(self.key_buf):
+            translation += self.key_to_tf.get(k, RigidTransform()).translation()
+        translation_r6 = np.concatenate((np.array([0, 0, 0]), translation))
+        self.sp_R7 += np.linalg.pinv(J) @ translation_r6
+        null_space_qd = components.DEFAULT_PANDA_ANGLES[:7] - panda_joints
+        #  self.sp_R7 += 0.01 * ((np.eye(7) - (np.linalg.pinv(J) @ J)) @ null_space_qd)
         self.key_buf = []
 
     def __call__(self, state, time):
@@ -50,7 +52,7 @@ class TeleopPolicy:
             self.sp_R7 = state["panda"][:7]
             self.sp_SE3 = self.panda.fk(self.sp_R7)
         if (time - self.last_called) >= 0.01:
-            self.update_sp(state["panda"][:7])
+            self.update_sp(state["panda"][:7], state.jacobian)
             self.last_called = time
         return actions.CartesianStiffnessAction(self.K, self.sp_R7, self.gripper)
 

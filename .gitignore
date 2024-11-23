@@ -3,3 +3,4 @@ swap-pane
 *.pyc
 *.swp
 *.egg-info
+*.npy

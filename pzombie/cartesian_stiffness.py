@@ -13,6 +13,10 @@ class CartesianStiffnessController(LeafSystem):
     def __init__(self, plant):
         LeafSystem.__init__(self)
         self.plant = plant
+        self.tau_history = []
+        self.q_history = []
+        self.last_logged = 0.0
+        self.not_logged = True
 
         self.panda = self.plant.GetModelInstanceByName("panda")
         num_states = self.plant.num_multibody_states(self.panda)
@@ -177,4 +181,15 @@ class CartesianStiffnessController(LeafSystem):
         if spring_damper_F_mag > 20:
             spring_damper_F[:7] = (spring_damper_F[:7] / spring_damper_F_mag) * 20
         tau += spring_damper_F
+        if context.get_time() - self.last_logged > 0.2:
+            self.last_logged = context.get_time()
+            self.tau_history.append(tau[:7])
+            self.q_history.append(x[:7])
+        if self.not_logged and (context.get_time() > 90.0):
+            print("LOGGED")
+            self.not_logged = False
+            tau_history = np.array(self.tau_history)
+            np.save("tau.npy", tau_history)
+            q_history = np.array(self.q_history)
+            np.save("q.npy", q_history)
         output.SetFromVector(tau)
